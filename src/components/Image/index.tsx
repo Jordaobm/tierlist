@@ -47,8 +47,6 @@ export const Image = ({ file, setFiles, setRows }: ImageProps) => {
 
         const fileId = e?.target?.id?.split("file-")[1];
 
-        console.log({ fileId, rowId });
-
         let used = false;
 
         setRows((prev) =>
@@ -58,6 +56,7 @@ export const Image = ({ file, setFiles, setRows }: ImageProps) => {
                 used = true;
                 return { ...row, files: [...row?.files, file] };
               }
+              used = true;
               return row;
             } else {
               return {
