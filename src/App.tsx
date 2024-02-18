@@ -1,8 +1,8 @@
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 import { v4 } from "uuid";
-import { DEFAULT_ROWS } from "./config/constantes";
 import { Image } from "./components/Image";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { DEFAULT_ROWS } from "./config/constantes";
 
 export interface IFile {
   id?: string;
@@ -183,7 +183,20 @@ export const App = () => {
       </div>
 
       <div id="images" className="w-full flex flex-col h-[25vh] border-2">
-        <input type="file" multiple onChange={addFiles}></input>
+        <input
+          type="file"
+          multiple
+          onChange={addFiles}
+          className="opacity-0 hidden"
+          id="file"
+        ></input>
+
+        <label
+          htmlFor="file"
+          className="flex items-center text-center justify-center font-bold m-2 w-60 h-20 bg-lime-500 rounded "
+        >
+          Adicionar imagens
+        </label>
 
         <div className="w-full flex overflow-x-auto h-[100%]">
           {files
