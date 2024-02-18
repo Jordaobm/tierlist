@@ -1,4 +1,10 @@
-import { ChevronDown, ChevronUp } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  ImagePlus,
+  Pencil,
+  PictureInPicture,
+} from "lucide-react";
 import { useState } from "react";
 import { v4 } from "uuid";
 import { Image } from "./components/Image";
@@ -111,14 +117,38 @@ export const App = () => {
   };
 
   return (
-    <div className="w-full flex flex-col h-[100vh] p-4">
+    <div className="w-full flex flex-col h-[100vh] p-4 max-w-screen-xl m-auto">
       <div
         id="content"
-        className="w-full flex flex-col h-[75vh] gap-2 overflow-y-auto"
+        className="w-full flex flex-col h-[80vh] gap-2 overflow-y-auto"
       >
-        <button onClick={addRow} className="bg-lime-700 p-2 rounded ">
-          Adicionar linha
-        </button>
+        <div className="flex gap-4 h-12">
+          <button
+            onClick={addRow}
+            className="bg-lime-700 p-2 rounded flex items-center gap-2 hover:bg-lime-900"
+          >
+            <Pencil size="16" />
+            Adicionar linha
+          </button>
+
+          <div className="h-[100%] flex">
+            <input
+              type="file"
+              multiple
+              onChange={addFiles}
+              className="opacity-0 hidden"
+              id="file"
+            ></input>
+
+            <label
+              htmlFor="file"
+              className="bg-lime-700 p-2 rounded flex items-center gap-2 cursor-pointer hover:bg-lime-900"
+            >
+              <ImagePlus size="16" />
+              Adicionar imagens
+            </label>
+          </div>
+        </div>
 
         {rows
           ?.sort((a, b) => (a?.order > b?.order ? 1 : -1))
@@ -153,7 +183,7 @@ export const App = () => {
                   }
                 />
               </label>
-              <div className="bg-slate-900 w-[100%] min-h-32 flex flex-wrap">
+              <div className="bg-slate-800 w-[100%] min-h-32 flex flex-wrap">
                 {row?.files?.map((file) => (
                   <Image
                     key={file?.id}
@@ -183,22 +213,10 @@ export const App = () => {
           ))}
       </div>
 
-      <div id="images" className="w-full flex flex-col h-[25vh] border-2">
-        <input
-          type="file"
-          multiple
-          onChange={addFiles}
-          className="opacity-0 hidden"
-          id="file"
-        ></input>
-
-        <label
-          htmlFor="file"
-          className="flex items-center text-center justify-center font-bold m-2 w-60 h-20 bg-lime-500 rounded "
-        >
-          Adicionar imagens
-        </label>
-
+      <div
+        id="images"
+        className="w-full flex flex-col h-[20vh] border-2 bg-slate-500"
+      >
         <div className="w-full flex overflow-x-auto h-[100%]">
           {files
             ?.filter((e) => !e?.used)

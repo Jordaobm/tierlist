@@ -9,6 +9,7 @@ export interface ImageProps {
 export const Image = ({ file, setFiles, setRows }: ImageProps) => {
   return (
     <div
+      title={file?.file?.name}
       draggable
       key={file?.id}
       id={file?.id}
