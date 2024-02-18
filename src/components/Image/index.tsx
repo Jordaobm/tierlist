@@ -9,6 +9,7 @@ export interface ImageProps {
 export const Image = ({ file, setFiles, setRows }: ImageProps) => {
   return (
     <div
+      draggable
       key={file?.id}
       id={file?.id}
       className="border-2 min-h-20 flex h-32 max-h-32"
@@ -72,6 +73,44 @@ export const Image = ({ file, setFiles, setRows }: ImageProps) => {
         );
 
         element?.remove();
+      }}
+      onDragEnd={(e: any) => {
+        const { pageX, pageY } = e;
+
+        const rowId = document
+          .elementsFromPoint(pageX, pageY)
+          ?.find((e) => e?.className?.includes("row"))?.id;
+
+        // let element = document?.getElementById(`fake-${file?.id}`);
+        // if (!element) return;
+
+        const fileId = e?.target?.id?.split("file-")[1];
+
+        let used = false;
+
+        setRows((prev) =>
+          prev?.map((row) => {
+            if (row?.id === rowId) {
+              if (!row?.files?.find((e) => e?.id === fileId)) {
+                used = true;
+                return { ...row, files: [...row?.files, file] };
+              }
+              used = true;
+              return row;
+            } else {
+              return {
+                ...row,
+                files: row?.files?.filter((e) => e?.id !== fileId),
+              };
+            }
+          })
+        );
+
+        setFiles((prev) =>
+          prev?.map((file) => (file?.id === fileId ? { ...file, used } : file))
+        );
+
+        // element?.remove();
       }}
     >
       <img

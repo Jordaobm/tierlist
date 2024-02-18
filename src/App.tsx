@@ -127,6 +127,7 @@ export const App = () => {
               key={row?.id}
               id={row?.id}
               className="border-2 border-black flex row"
+              draggable
             >
               <label
                 className="bg-slate-500 h-[100%] w-24 flex items-center justify-center"
