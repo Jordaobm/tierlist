@@ -14,22 +14,13 @@ export interface TierList {
 }
 
 const firebaseConfig = {
-  apiKey: "AIzaSyC3CpwiYnRmanNFwy6dSE7qS7ndATIGAqE",
-  authDomain: "tierlist-d941c.firebaseapp.com",
-  projectId: "tierlist-d941c",
-  storageBucket: "tierlist-d941c.appspot.com",
-  messagingSenderId: "151490505452",
-  appId: "1:151490505452:web:2973775fd96d89e5f853c9",
+  apiKey: import.meta.env.VITE_APP_API_KEY,
+  authDomain: import.meta.env.VITE_APP_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_APP_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_APP_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_APP_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_APP_APP_ID,
 };
-
-// const firebaseConfig = {
-//   apiKey: "1",
-//   authDomain: "1",
-//   projectId: "1",
-//   storageBucket: "1",
-//   messagingSenderId: "1",
-//   appId: "1",
-// };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
