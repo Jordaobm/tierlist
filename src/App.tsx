@@ -2,20 +2,27 @@ import html2canvas from "html2canvas";
 import {
   ChevronDown,
   ChevronUp,
+  Download,
   Fullscreen,
   ImagePlus,
   Pencil,
+  Upload,
 } from "lucide-react";
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { v4 } from "uuid";
 import { Item } from "./components/Image";
 import { DEFAULT_ROWS, STYLES } from "./config/constantes";
+import { TierList, addTierList, getTierlistById } from "./services/firebase";
+import { base64ToFile, fileToBase64 } from "./utils/file";
 
 export interface IFile {
   id?: string;
   file: File;
   urlToShow?: string;
   used?: boolean;
+  base64?: string;
+  base64FileName?: string;
 }
 export interface IRow {
   id: string;
@@ -26,6 +33,8 @@ export interface IRow {
 }
 
 export const App = () => {
+  const [searchParams] = useSearchParams();
+  const tierlistId = searchParams.get("tierlistId") || "";
   const [rows, setRows] = useState<IRow[]>(DEFAULT_ROWS);
   const [files, setFiles] = useState<IFile[]>([]);
 
@@ -147,19 +156,71 @@ export const App = () => {
     root.children[0].children[1].children[0].className = STYLES.contentImages;
   };
 
+  const onUpload = async () => {
+    const filesToBase64 = await Promise.all(
+      files?.map(async (e) => {
+        const r = await fileToBase64(e?.file);
+        return { ...e, base64: String(r), base64FileName: e?.file?.name };
+      })
+    );
+
+    const fileToExport: TierList = {
+      rows: rows,
+      files: filesToBase64,
+    };
+
+    const response = await addTierList(fileToExport);
+    let url = new URL(window.location.href);
+    url.searchParams.set("tierlistId", response);
+    window.history.pushState({}, "", url.toString());
+  };
+
+  const onImport = async () => {
+    const firebaseData = await getTierlistById(tierlistId);
+    try {
+      const data: { rows: IRow[]; files: IFile[] } = JSON.parse(
+        firebaseData?.data
+      );
+
+      const importFiles = data?.files?.map((e) => {
+        const file = base64ToFile(
+          String(e?.base64),
+          String(e?.base64FileName || v4()),
+          "image/jpeg"
+        );
+
+        return {
+          ...e,
+          file,
+          urlToShow: URL.createObjectURL(file),
+        };
+      });
+
+      const importRows = data?.rows?.map((row) => ({
+        ...row,
+        files: row?.files?.map((file) => {
+          const f = importFiles?.find((findFile) => findFile?.id === file?.id);
+
+          if (f) {
+            return f;
+          }
+
+          return file;
+        }),
+      }));
+
+      setRows(importRows);
+      setFiles(importFiles);
+    } catch (error) {
+      return;
+    }
+  };
+
   return (
     <div className={STYLES.container} id="container">
       <div id="content" className={STYLES.content}>
-        <div className="flex gap-4 h-12">
-          <button
-            onClick={addRow}
-            className="bg-lime-700 p-2 rounded flex items-center gap-2 hover:bg-lime-900"
-          >
-            <Pencil size="16" />
-            Adicionar linha
-          </button>
-
-          <div className="h-[100%] flex">
+        <div className="flex flex-wrap gap-4">
+          <div className="flex max-h-12">
             <input
               type="file"
               multiple
@@ -170,7 +231,7 @@ export const App = () => {
 
             <label
               htmlFor="file"
-              className="bg-blue-700 p-2 rounded flex items-center gap-2 cursor-pointer hover:bg-blue-900"
+              className="bg-blue-700 p-2 rounded flex items-center gap-2 cursor-pointer hover:bg-blue-900 max-h-12"
             >
               <ImagePlus size="16" />
               Adicionar imagens
@@ -178,11 +239,35 @@ export const App = () => {
           </div>
 
           <button
+            onClick={addRow}
+            className="bg-orange-700 p-2 rounded flex items-center gap-2 hover:bg-orange-900 max-h-12"
+          >
+            <Pencil size="16" />
+            Adicionar linha
+          </button>
+
+          <button
             onClick={onScreenShot}
-            className="bg-yellow-700 p-2 rounded flex items-center gap-2 hover:bg-yellow-900"
+            className="bg-yellow-700 p-2 rounded flex items-center gap-2 hover:bg-yellow-900 max-h-12"
           >
             <Fullscreen size="16" />
             Capturar a tela
+          </button>
+
+          <button
+            onClick={onUpload}
+            className="bg-red-700 p-2 rounded flex items-center gap-2 hover:bg-red-900 max-h-12"
+          >
+            <Upload size="16" />
+            Upload
+          </button>
+
+          <button
+            onClick={onImport}
+            className="bg-lime-700 p-2 rounded flex items-center gap-2 hover:bg-lime-900 max-h-12"
+          >
+            <Download size="16" />
+            Import
           </button>
         </div>
 
@@ -196,7 +281,6 @@ export const App = () => {
               draggable
             >
               <label
-                // className="bg-slate-500 h-[100%] w-24 flex items-center justify-center min-h-32"
                 className="w-24 flex items-center justify-center"
                 style={{ backgroundColor: row?.color }}
                 htmlFor={`color-${row?.id}`}
