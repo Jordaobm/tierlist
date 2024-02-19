@@ -1,14 +1,15 @@
+import html2canvas from "html2canvas";
 import {
   ChevronDown,
   ChevronUp,
+  Fullscreen,
   ImagePlus,
   Pencil,
-  PictureInPicture,
 } from "lucide-react";
 import { useState } from "react";
 import { v4 } from "uuid";
-import { Image } from "./components/Image";
-import { DEFAULT_ROWS } from "./config/constantes";
+import { Item } from "./components/Image";
+import { DEFAULT_ROWS, STYLES } from "./config/constantes";
 
 export interface IFile {
   id?: string;
@@ -52,6 +53,7 @@ export const App = () => {
           name: "Item",
           order: lastRow?.order + 1,
           files: [],
+          color: "#CBCBCB",
         },
       ];
     });
@@ -116,12 +118,38 @@ export const App = () => {
     );
   };
 
+  const onScreenShot = () => {
+    const root = document.getElementById("root");
+    if (!root) return;
+
+    root.children[0].className = STYLES.containerForPrint;
+    root.style.width = "1440px";
+    root.style.minHeight = `${root?.scrollHeight}px`;
+
+    root.children[0].children[0].className = STYLES.contentForPrint;
+    root.children[0].children[1].className = STYLES.contentImages;
+    root.children[0].children[1].children[0].className =
+      STYLES.contentImagesForPrint;
+
+    html2canvas(root).then(function (canvas) {
+      const link = document.createElement("a");
+      link.download = "tierlist.png";
+      link.href = canvas.toDataURL();
+      link.click();
+    });
+
+    root.children[0].className = STYLES.container;
+    root.style.width = "100%";
+    root.style.minHeight = `auto`;
+
+    root.children[0].children[0].className = STYLES.content;
+    root.children[0].children[1].className = STYLES.images;
+    root.children[0].children[1].children[0].className = STYLES.contentImages;
+  };
+
   return (
-    <div className="w-full flex flex-col h-[100vh] p-4 max-w-screen-xl m-auto">
-      <div
-        id="content"
-        className="w-full flex flex-col h-[80vh] gap-2 overflow-y-auto"
-      >
+    <div className={STYLES.container} id="container">
+      <div id="content" className={STYLES.content}>
         <div className="flex gap-4 h-12">
           <button
             onClick={addRow}
@@ -142,12 +170,20 @@ export const App = () => {
 
             <label
               htmlFor="file"
-              className="bg-lime-700 p-2 rounded flex items-center gap-2 cursor-pointer hover:bg-lime-900"
+              className="bg-blue-700 p-2 rounded flex items-center gap-2 cursor-pointer hover:bg-blue-900"
             >
               <ImagePlus size="16" />
               Adicionar imagens
             </label>
           </div>
+
+          <button
+            onClick={onScreenShot}
+            className="bg-yellow-700 p-2 rounded flex items-center gap-2 hover:bg-yellow-900"
+          >
+            <Fullscreen size="16" />
+            Capturar a tela
+          </button>
         </div>
 
         {rows
@@ -160,7 +196,8 @@ export const App = () => {
               draggable
             >
               <label
-                className="bg-slate-500 h-[100%] w-24 flex items-center justify-center"
+                // className="bg-slate-500 h-[100%] w-24 flex items-center justify-center min-h-32"
+                className="w-24 flex items-center justify-center"
                 style={{ backgroundColor: row?.color }}
                 htmlFor={`color-${row?.id}`}
               >
@@ -185,7 +222,7 @@ export const App = () => {
               </label>
               <div className="bg-slate-800 w-[100%] min-h-32 flex flex-wrap">
                 {row?.files?.map((file) => (
-                  <Image
+                  <Item
                     key={file?.id}
                     file={file}
                     setFiles={setFiles}
@@ -213,15 +250,17 @@ export const App = () => {
           ))}
       </div>
 
-      <div
-        id="images"
-        className="w-full flex flex-col h-[20vh] border-2 bg-slate-500"
-      >
-        <div className="w-full flex overflow-x-auto h-[100%]">
+      <div id="images" className={STYLES.images}>
+        <div className={STYLES.contentImages}>
+          {!files?.length && (
+            <label htmlFor="file">
+              Adicione imagens e elas aparecerão por aqui!
+            </label>
+          )}
           {files
             ?.filter((e) => !e?.used)
             ?.map((file) => (
-              <Image
+              <Item
                 key={file?.id}
                 file={file}
                 setFiles={setFiles}

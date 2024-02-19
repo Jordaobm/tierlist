@@ -6,7 +6,7 @@ export interface ImageProps {
   setFiles: React.Dispatch<React.SetStateAction<IFile[]>>;
 }
 
-export const Image = ({ file, setFiles, setRows }: ImageProps) => {
+export const Item = ({ file, setFiles, setRows }: ImageProps) => {
   return (
     <div
       title={file?.file?.name}
@@ -116,7 +116,7 @@ export const Image = ({ file, setFiles, setRows }: ImageProps) => {
     >
       <img
         id={`file-${file?.id}`}
-        className="w-40 min-w-40"
+        className="w-40 min-w-40 object-contain"
         src={file?.urlToShow}
       />
     </div>

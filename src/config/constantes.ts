@@ -42,3 +42,17 @@ export const DEFAULT_ROWS = [
     color: "#000000",
   },
 ];
+
+export const STYLES = {
+  container: "w-full flex flex-col h-[100vh] p-4 max-w-screen-xl m-auto",
+  containerForPrint: "w-full flex flex-col p-4 max-w-screen-xl m-auto",
+
+  content: "w-full flex flex-col gap-2 overflow-y-auto h-[80vh]",
+  contentForPrint: "w-full flex flex-col gap-2 overflow-y-auto",
+
+  images: "w-full flex flex-col h-[20vh] border-2 bg-slate-500",
+  imagesForPrint: "w-full flex flex-col border-2 bg-slate-500",
+
+  contentImages: "w-full flex overflow-x-auto h-[100%]",
+  contentImagesForPrint: "w-full flex h-[100%] flex-wrap",
+};
