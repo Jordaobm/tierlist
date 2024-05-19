@@ -10,6 +10,10 @@ Um projeto React para criar, compartilhar e importar tierlists de maneira fácil
 - ☁️ **Upload para Firestore**: Faça o upload da sua tierlist para Firestore e compartilhe com os amigos por meio de um link.
 - 🌐 **Importar Tierlist**: Importe uma tierlist utilizando o ID fornecido na URL (ex: `?tierlistId=qgBkk8sHjt3cE1cEL9aj`).
 
+<div align="center">
+  <img alt="tela" title="Tela" src="https://github.com/Jordaobm/tierlist/blob/master/docs/1.png" width="1024px" />
+</div>
+
 ## 🔗 Deploy
 
 O projeto está hospedado na Vercel e pode ser acessado através deste [link](https://tierlist-six.vercel.app).
