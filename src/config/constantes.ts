@@ -56,3 +56,5 @@ export const STYLES = {
   contentImages: "w-full flex overflow-x-auto h-[100%]",
   contentImagesForPrint: "w-full flex h-[100%] flex-wrap",
 };
+
+export const MAX_LIMIT_FIRESTORE = 1048487;

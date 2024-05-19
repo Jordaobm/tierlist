@@ -7,6 +7,7 @@ import {
   getFirestore,
 } from "firebase/firestore";
 import { IFile, IRow } from "../App";
+import { MAX_LIMIT_FIRESTORE } from "../config/constantes";
 
 export interface TierList {
   rows: IRow[];
@@ -46,13 +47,22 @@ export const getTierlistById = async (tierlistId: string) => {
 export const addTierList = async (tierlist: TierList) => {
   let id = "";
   const cll = collection(db, "tierlist");
-  await addDoc(cll, { data: JSON.stringify(tierlist) })
-    .then((docRef) => {
-      id = docRef.id;
-    })
-    .catch((error) => {
-      console.error("Erro ao adicionar documento: ", error);
-    });
-
+  if (JSON.stringify(tierlist).length >= MAX_LIMIT_FIRESTORE) {
+    alert(
+      `Não foi possível persistir sua tierlist no firestore pois seus arquivos somam mais de ${MAX_LIMIT_FIRESTORE} bytes`
+    );
+    return;
+  }
+  try {
+    await addDoc(cll, { data: JSON.stringify(tierlist) })
+      .then((docRef) => {
+        id = docRef.id;
+      })
+      .catch((error) => {
+        console.error("Erro ao adicionar documento: ", error);
+      });
+  } catch (error) {
+    console.log(error);
+  }
   return id;
 };

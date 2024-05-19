@@ -1,3 +1,5 @@
+import { IFile } from "../App";
+
 export const fileToBase64 = async (file: File) => {
   const p = new Promise((resolve, reject) => {
     var reader = new FileReader();
@@ -27,4 +29,13 @@ export const base64ToFile = (
   }
   var blob = new Blob([ab], { type: mimeType });
   return new File([blob], filename, { type: mimeType });
+};
+
+export const fileToBase64Array = async (files: IFile[]) => {
+  return await Promise.all(
+    files?.map(async (e) => {
+      const r = await fileToBase64(e?.file);
+      return { ...e, base64: String(r), base64FileName: e?.file?.name };
+    })
+  );
 };

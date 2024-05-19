@@ -8,13 +8,13 @@ import {
   Pencil,
   Upload,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { v4 } from "uuid";
 import { Item } from "./components/Image";
-import { DEFAULT_ROWS, STYLES } from "./config/constantes";
+import { DEFAULT_ROWS, MAX_LIMIT_FIRESTORE, STYLES } from "./config/constantes";
 import { TierList, addTierList, getTierlistById } from "./services/firebase";
-import { base64ToFile, fileToBase64 } from "./utils/file";
+import { base64ToFile, fileToBase64Array } from "./utils/file";
 
 export interface IFile {
   id?: string;
@@ -35,8 +35,10 @@ export interface IRow {
 export const App = () => {
   const [searchParams] = useSearchParams();
   const tierlistId = searchParams.get("tierlistId") || "";
+  const [tierListSize, setTierListSize] = useState(0);
   const [rows, setRows] = useState<IRow[]>(DEFAULT_ROWS);
   const [files, setFiles] = useState<IFile[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const addRow = () => {
     setRows((prev) => {
@@ -135,9 +137,9 @@ export const App = () => {
     root.style.width = "1440px";
     root.style.minHeight = `${root?.scrollHeight}px`;
 
-    root.children[0].children[0].className = STYLES.contentForPrint;
-    root.children[0].children[1].className = STYLES.contentImages;
-    root.children[0].children[1].children[0].className =
+    root.children[0].children[2].className = STYLES.contentForPrint;
+    root.children[0].children[3].className = STYLES.contentImages;
+    root.children[0].children[3].children[0].className =
       STYLES.contentImagesForPrint;
 
     html2canvas(root).then(function (canvas) {
@@ -151,18 +153,14 @@ export const App = () => {
     root.style.width = "100%";
     root.style.minHeight = `auto`;
 
-    root.children[0].children[0].className = STYLES.content;
-    root.children[0].children[1].className = STYLES.images;
-    root.children[0].children[1].children[0].className = STYLES.contentImages;
+    root.children[0].children[2].className = STYLES.content;
+    root.children[0].children[3].className = STYLES.images;
+    root.children[0].children[3].children[0].className = STYLES.contentImages;
   };
 
   const onUpload = async () => {
-    const filesToBase64 = await Promise.all(
-      files?.map(async (e) => {
-        const r = await fileToBase64(e?.file);
-        return { ...e, base64: String(r), base64FileName: e?.file?.name };
-      })
-    );
+    setIsLoading(true);
+    const filesToBase64 = await fileToBase64Array(files);
 
     const fileToExport: TierList = {
       rows: rows,
@@ -170,12 +168,19 @@ export const App = () => {
     };
 
     const response = await addTierList(fileToExport);
+
+    if (!response) {
+      return;
+    }
+
     let url = new URL(window.location.href);
     url.searchParams.set("tierlistId", response);
     window.history.pushState({}, "", url.toString());
+    setIsLoading(false);
   };
 
   const onImport = async () => {
+    setIsLoading(true);
     const firebaseData = await getTierlistById(tierlistId);
     try {
       const data: { rows: IRow[]; files: IFile[] } = JSON.parse(
@@ -214,98 +219,169 @@ export const App = () => {
     } catch (error) {
       return;
     }
+    setIsLoading(false);
   };
 
-  return (
-    <div className={STYLES.container} id="container">
-      <div id="content" className={STYLES.content}>
-        <div className="flex flex-wrap gap-4">
-          <div className="flex max-h-12">
-            <input
-              type="file"
-              multiple
-              onChange={addFiles}
-              className="opacity-0 hidden"
-              id="file"
-            ></input>
+  useEffect(() => {
+    fileToBase64Array(files).then((e) => {
+      const fileToExport: TierList = {
+        rows: rows,
+        files: e,
+      };
 
-            <label
-              htmlFor="file"
-              className="bg-blue-700 p-2 rounded flex items-center gap-2 cursor-pointer hover:bg-blue-900 max-h-12"
-            >
-              <ImagePlus size="16" />
-              Adicionar imagens
-            </label>
+      setTierListSize(JSON.stringify(fileToExport)?.length || 0);
+    });
+  }, [rows, files]);
+
+  return (
+    <>
+      {isLoading ? (
+        <div className="w-screen h-screen flex justify-center items-center font-bold text-3xl">
+          Carregando...
+        </div>
+      ) : (
+        <div className={STYLES.container} id="container">
+          <div
+            className={`${
+              MAX_LIMIT_FIRESTORE >= tierListSize
+                ? "text-green-500"
+                : "text-red-500"
+            }`}
+          >
+            Tamanho da sua tierlist: {tierListSize}KB
+          </div>
+          <div>
+            Tamanho máximo permitido para upload: {MAX_LIMIT_FIRESTORE}KB
           </div>
 
-          <button
-            onClick={addRow}
-            className="bg-orange-700 p-2 rounded flex items-center gap-2 hover:bg-orange-900 max-h-12"
-          >
-            <Pencil size="16" />
-            Adicionar linha
-          </button>
+          <div id="content" className={STYLES.content}>
+            <div className="flex flex-wrap gap-4">
+              <div className="flex max-h-12">
+                <input
+                  type="file"
+                  multiple
+                  onChange={addFiles}
+                  className="opacity-0 hidden"
+                  id="file"
+                ></input>
 
-          <button
-            onClick={onScreenShot}
-            className="bg-yellow-700 p-2 rounded flex items-center gap-2 hover:bg-yellow-900 max-h-12"
-          >
-            <Fullscreen size="16" />
-            Capturar a tela
-          </button>
+                <label
+                  htmlFor="file"
+                  className="bg-blue-700 p-2 rounded flex items-center gap-2 cursor-pointer hover:bg-blue-900 max-h-12"
+                >
+                  <ImagePlus size="16" />
+                  Adicionar imagens
+                </label>
+              </div>
 
-          <button
-            onClick={onUpload}
-            className="bg-red-700 p-2 rounded flex items-center gap-2 hover:bg-red-900 max-h-12"
-          >
-            <Upload size="16" />
-            Upload
-          </button>
-
-          <button
-            onClick={onImport}
-            className="bg-lime-700 p-2 rounded flex items-center gap-2 hover:bg-lime-900 max-h-12"
-          >
-            <Download size="16" />
-            Import
-          </button>
-        </div>
-
-        {rows
-          ?.sort((a, b) => (a?.order > b?.order ? 1 : -1))
-          ?.map((row, index) => (
-            <div
-              key={row?.id}
-              id={row?.id}
-              className="border-2 border-black flex row"
-              draggable
-            >
-              <label
-                className="w-24 flex items-center justify-center"
-                style={{ backgroundColor: row?.color }}
-                htmlFor={`color-${row?.id}`}
+              <button
+                onClick={addRow}
+                className="bg-orange-700 p-2 rounded flex items-center gap-2 hover:bg-orange-900 max-h-12"
               >
-                <input
-                  type="text"
-                  className="bg-transparent outline-none text-center"
-                  value={row?.name}
-                  onChange={(event) =>
-                    handleChangeName(row, event?.target?.value)
-                  }
-                />
+                <Pencil size="16" />
+                Adicionar linha
+              </button>
 
-                <input
-                  className="opacity-0 border-none h-0"
-                  id={`color-${row?.id}`}
-                  type="color"
-                  value={row?.color}
-                  onChange={(event) =>
-                    handleChangeColor(row, event?.target?.value)
-                  }
-                />
-              </label>
-              <div className="bg-slate-800 w-[100%] min-h-32 flex flex-wrap">
-                {row?.files?.map((file) => (
+              <button
+                onClick={onScreenShot}
+                className="bg-yellow-700 p-2 rounded flex items-center gap-2 hover:bg-yellow-900 max-h-12"
+              >
+                <Fullscreen size="16" />
+                Capturar a tela
+              </button>
+
+              <button
+                onClick={onUpload}
+                className="bg-red-700 p-2 rounded flex items-center gap-2 hover:bg-red-900 max-h-12"
+              >
+                <Upload size="16" />
+                Upload
+              </button>
+
+              <button
+                onClick={onImport}
+                className="bg-lime-700 p-2 rounded flex items-center gap-2 hover:bg-lime-900 max-h-12"
+              >
+                <Download size="16" />
+                Import
+              </button>
+            </div>
+
+            {rows
+              ?.sort((a, b) => (a?.order > b?.order ? 1 : -1))
+              ?.map((row, index) => (
+                <div
+                  key={row?.id}
+                  id={row?.id}
+                  className="border-2 border-black flex row"
+                  draggable
+                >
+                  <label
+                    className="w-24 flex items-center justify-center"
+                    style={{ backgroundColor: row?.color }}
+                    htmlFor={`color-${row?.id}`}
+                  >
+                    <textarea
+                      className="bg-transparent outline-none text-center resize-none h-full"
+                      value={row?.name}
+                      onChange={(event) =>
+                        handleChangeName(row, event?.target?.value)
+                      }
+                    />
+
+                    <input
+                      className="opacity-0 border-none h-0"
+                      id={`color-${row?.id}`}
+                      type="color"
+                      value={row?.color}
+                      onChange={(event) =>
+                        handleChangeColor(row, event?.target?.value)
+                      }
+                    />
+                  </label>
+                  <div className="bg-slate-800 w-[100%] min-h-32 flex flex-wrap">
+                    {row?.files?.map((file) => (
+                      <Item
+                        key={file?.id}
+                        file={file}
+                        setFiles={setFiles}
+                        setRows={setRows}
+                      />
+                    ))}
+                  </div>
+                  <div className="bg-slate-500 w-20 min-h-32 flex flex-col justify-center gap-4">
+                    <button
+                      disabled={index === 0}
+                      className="flex items-center justify-center"
+                      onClick={() => handleChangeOrder(row, "UP")}
+                    >
+                      <ChevronUp />
+                    </button>
+                    <button
+                      disabled={rows?.length === index + 1}
+                      className="flex items-center justify-center"
+                      onClick={() => handleChangeOrder(row, "DOWN")}
+                    >
+                      <ChevronDown />
+                    </button>
+                  </div>
+                </div>
+              ))}
+          </div>
+
+          <div id="images" className={STYLES.images}>
+            <div
+              className={STYLES.contentImages}
+              title="Clique para adicionar uma imagem ou suba até o topo da página e clique no botão azul"
+            >
+              {!files?.length && (
+                <label htmlFor="file">
+                  Adicione imagens e elas aparecerão por aqui!
+                </label>
+              )}
+              {files
+                ?.filter((e) => !e?.used)
+                ?.map((file) => (
                   <Item
                     key={file?.id}
                     file={file}
@@ -313,46 +389,10 @@ export const App = () => {
                     setRows={setRows}
                   />
                 ))}
-              </div>
-              <div className="bg-slate-500 w-20 min-h-32 flex flex-col justify-center gap-4">
-                <button
-                  disabled={index === 0}
-                  className="flex items-center justify-center"
-                  onClick={() => handleChangeOrder(row, "UP")}
-                >
-                  <ChevronUp />
-                </button>
-                <button
-                  disabled={rows?.length === index + 1}
-                  className="flex items-center justify-center"
-                  onClick={() => handleChangeOrder(row, "DOWN")}
-                >
-                  <ChevronDown />
-                </button>
-              </div>
             </div>
-          ))}
-      </div>
-
-      <div id="images" className={STYLES.images}>
-        <div className={STYLES.contentImages}>
-          {!files?.length && (
-            <label htmlFor="file">
-              Adicione imagens e elas aparecerão por aqui!
-            </label>
-          )}
-          {files
-            ?.filter((e) => !e?.used)
-            ?.map((file) => (
-              <Item
-                key={file?.id}
-                file={file}
-                setFiles={setFiles}
-                setRows={setRows}
-              />
-            ))}
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 };
